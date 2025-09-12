@@ -1,0 +1,73 @@
+name: Update Formula
+
+on:
+  schedule:
+    # 毎日UTCの0時（日本時間9時）に実行
+    - cron: '0 0 * * *'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to update (without v prefix)'
+        required: false
+        type: string
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  check-and-update:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+    
+    - name: Setup environment
+      run: |
+        chmod +x scripts/*.sh
+    
+    - name: Check for new release
+      id: check_release
+      run: |
+        if [ -n "${{ github.event.inputs.version }}" ]; then
+          # 手動実行でバージョン指定された場合
+          echo "new_version=${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
+          echo "update_needed=true" >> $GITHUB_OUTPUT
+        else
+          # 定期実行の場合はバージョンをチェック
+          ./scripts/check-version.sh
+        fi
+    
+    - name: Update Formula
+      if: steps.check_release.outputs.update_needed == 'true'
+      run: |
+        ./scripts/update-formula.sh "${{ steps.check_release.outputs.new_version }}"
+    
+    - name: Generate PR body
+      if: steps.check_release.outputs.update_needed == 'true'
+      id: pr_body
+      run: |
+        # PR本文を生成してファイルに保存
+        ./scripts/create-pr-body.sh "${{ steps.check_release.outputs.new_version }}" > pr_body.md
+        
+        # GitHub Outputに設定（複数行対応）
+        {
+          echo 'body<<EOF'
+          cat pr_body.md
+          echo EOF
+        } >> $GITHUB_OUTPUT
+    
+    - name: Create Pull Request
+      if: steps.check_release.outputs.update_needed == 'true'
+      uses: peter-evans/create-pull-request@v5
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        commit-message: "Update cloudwatch-log-tui to ${{ steps.check_release.outputs.new_version }}"
+        title: "Update cloudwatch-log-tui to ${{ steps.check_release.outputs.new_version }}"
+        body: ${{ steps.pr_body.outputs.body }}
+        branch: update-cloudwatch-log-tui-${{ steps.check_release.outputs.new_version }}
+        delete-branch: true
+        labels: |
+          dependencies
+          automated

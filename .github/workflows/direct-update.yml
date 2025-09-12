@@ -1,0 +1,113 @@
+name: Direct Formula Update
+
+on:
+  repository_dispatch:
+    types: [cloudwatch-log-tui-release]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to update (without v prefix)'
+        required: true
+        type: string
+      skip_pr:
+        description: 'Skip PR creation (commit directly)'
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+
+jobs:
+  update-formula:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+    
+    - name: Setup environment
+      run: |
+        chmod +x scripts/*.sh
+    
+    - name: Determine version
+      id: version
+      run: |
+        if [ -n "${{ github.event.inputs.version }}" ]; then
+          VERSION="${{ github.event.inputs.version }}"
+        elif [ "${{ github.event_name }}" = "repository_dispatch" ]; then
+          VERSION="${{ github.event.client_payload.version }}"
+        else
+          echo "Error: No version specified"
+          exit 1
+        fi
+        
+        echo "Version to update: $VERSION"
+        echo "version=$VERSION" >> $GITHUB_OUTPUT
+    
+    - name: Update Formula
+      run: |
+        ./scripts/update-formula.sh "${{ steps.version.outputs.version }}"
+    
+    - name: Commit changes directly
+      if: github.event.inputs.skip_pr == 'true' || github.event_name == 'repository_dispatch'
+      run: |
+        git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
+        git config --local user.name "github-actions[bot]"
+        
+        git add Formula/cloudwatch-log-tui.rb
+        git commit -m "Update cloudwatch-log-tui to ${{ steps.version.outputs.version }}"
+        git push
+    
+    - name: Create Pull Request
+      if: github.event.inputs.skip_pr != 'true' && github.event_name != 'repository_dispatch'
+      uses: peter-evans/create-pull-request@v5
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        commit-message: "Update cloudwatch-log-tui to ${{ steps.version.outputs.version }}"
+        title: "Update cloudwatch-log-tui to ${{ steps.version.outputs.version }}"
+        body-path: pr_body.md
+        branch: update-cloudwatch-log-tui-${{ steps.version.outputs.version }}
+        delete-branch: true
+        labels: |
+          dependencies
+          automated
+    
+    - name: Create notification issue
+      if: github.event.inputs.skip_pr == 'true' || github.event_name == 'repository_dispatch'
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const version = '${{ steps.version.outputs.version }}';
+          const issue = await github.rest.issues.create({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            title: `✅ cloudwatch-log-tui updated to ${version}`,
+            body: `## cloudwatch-log-tui has been updated
+            
+            - **Version**: ${version}
+            - **Release Page**: https://github.com/ryutaro-asada/cloudwatch-log-tui/releases/tag/v${version}
+            - **Commit**: ${context.sha}
+            - **Status**: Formula has been automatically updated and committed
+            
+            ### Testing
+            Please test the installation:
+            \`\`\`bash
+            brew update
+            brew upgrade cloudwatch-log-tui
+            # or for new installation
+            brew install cloudwatch-log-tui
+            \`\`\`
+            
+            ### Verification
+            \`\`\`bash
+            cloudwatch-log-tui --version
+            \`\`\`
+            
+            Close this issue if the update works correctly.`,
+            labels: ['automated', 'release-notification']
+          });
+          
+          console.log(`Created issue #${issue.data.number}`);
