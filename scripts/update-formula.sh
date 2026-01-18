@@ -57,16 +57,16 @@ class CloudwatchLogTui < Formula
   on_macos do
     if Hardware::CPU.intel?
       url "https://github.com/ryutaro-asada/cloudwatch-log-tui/releases/download/v#{version}/cloudwatch-log-tui-#{version}-darwin-amd64.tar.gz"
-      sha256 "${HASHES[darwin - amd64]}"
+      sha256 "${HASHES[darwin-amd64]}"
     else
       url "https://github.com/ryutaro-asada/cloudwatch-log-tui/releases/download/v#{version}/cloudwatch-log-tui-#{version}-darwin-arm64.tar.gz"
-      sha256 "${HASHES[darwin - arm64]}"
+      sha256 "${HASHES[darwin-arm64]}"
     end
   end
-  
+
   on_linux do
     url "https://github.com/ryutaro-asada/cloudwatch-log-tui/releases/download/v#{version}/cloudwatch-log-tui-#{version}-linux-amd64.tar.gz"
-    sha256 "${HASHES[linux - amd64]}"
+    sha256 "${HASHES[linux-amd64]}"
   end
 
   def install
@@ -98,6 +98,6 @@ EOF
 echo "Formula updated successfully!"
 echo "Summary:"
 echo "  Version: ${VERSION}"
-echo "  darwin-amd64: ${HASHES[darwin - amd64]}"
-echo "  darwin-arm64: ${HASHES[darwin - arm64]}"
-echo "  linux-amd64:  ${HASHES[linux - amd64]}"
+echo "  darwin-amd64: ${HASHES[darwin-amd64]}"
+echo "  darwin-arm64: ${HASHES[darwin-arm64]}"
+echo "  linux-amd64:  ${HASHES[linux-amd64]}"
