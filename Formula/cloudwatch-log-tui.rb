@@ -1,21 +1,21 @@
 class CloudwatchLogTui < Formula
   desc "Terminal UI for AWS CloudWatch Logs"
   homepage "https://github.com/ryutaro-asada/cloudwatch-log-tui"
-  version "0.1.4"
+  version "0.1.5"
   
   on_macos do
     if Hardware::CPU.intel?
       url "https://github.com/ryutaro-asada/cloudwatch-log-tui/releases/download/v#{version}/cloudwatch-log-tui-#{version}-darwin-amd64.tar.gz"
-      sha256 "da417059844f7f635ece6bf3d77ede79b36d9be0a95467bab448193898704c40"
+      sha256 "0b7c98bfc54d53fffe768d8600018853cbe505aa68d241a0098fb968cb366495"
     else
       url "https://github.com/ryutaro-asada/cloudwatch-log-tui/releases/download/v#{version}/cloudwatch-log-tui-#{version}-darwin-arm64.tar.gz"
-      sha256 "f723c65f2c1a228cd3eeed8e77f2e2fdfb3d3dfa9d7215697dbc596b8d6ca629"
+      sha256 "a636c1083d517c29681249fd37c84db345355f1db99eaf60b8294586d30ece44"
     end
   end
 
   on_linux do
     url "https://github.com/ryutaro-asada/cloudwatch-log-tui/releases/download/v#{version}/cloudwatch-log-tui-#{version}-linux-amd64.tar.gz"
-    sha256 "25b5e6b21f56b53a89dfd5573c7a54fe8f43a51265713f4e3b3874ad2ac56c42"
+    sha256 "abbd4a297a96ce2b76708a68f70af0a7c66d97f9e73d0b99a9f1f27d541961e1"
   end
 
   def install
